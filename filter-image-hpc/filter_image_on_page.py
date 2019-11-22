@@ -139,10 +139,10 @@ def main():
         try:
             pool = Pool()
             for vol in pool.imap_unordered(partial(process_vol, data_dir=args.data, out_dir=args.output, learner=learner, match_labels=match_labels), volumes):
-                logger.info("Processed %s (%d pages matched)", vol.vol_id, len(vol.pages))
                 if vol.pages:
                     out.write(vol.to_json() + '\n')
                     out.flush()
+                logger.info("Processed %s (%d pages matched)", vol.vol_id, len(vol.pages))
         except Exception:
             logger.exception("Multiprocessing pool error")
         except KeyboardInterrupt:
