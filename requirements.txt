@@ -1,0 +1,3 @@
+# for bounding box model
+numpy
+tensorflow
