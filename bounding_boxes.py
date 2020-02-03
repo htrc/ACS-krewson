@@ -9,6 +9,7 @@
 #   inspect_balloon_model.ipynb
 #
 
+import imageio
 import numpy as np
 import skimage 
 import sys
@@ -82,12 +83,13 @@ def detect_rois(image_id, config, model):
     """
     image = load_image(image_id)
     
-    image, window, scale, padding, crop = utils.resize_image(
-        image, 
-        min_dim=config.IMAGE_MIN_DIM, 
-        min_scale=config.IMAGE_MIN_SCALE, 
-        max_dim=config.IMAGE_MAX_DIM, 
-        mode=config.IMAGE_RESIZE_MODE)
+    # Interesting... we get a very nice crop if this is turned off
+    #image, window, scale, padding, crop = utils.resize_image(
+    #    image, 
+    #    min_dim=config.IMAGE_MIN_DIM, 
+    #    min_scale=config.IMAGE_MIN_SCALE, 
+    #    max_dim=config.IMAGE_MAX_DIM, 
+    #    mode=config.IMAGE_RESIZE_MODE)
 
     # turn off logging
     results = model.detect([image], verbose=0)
@@ -99,6 +101,7 @@ def detect_rois(image_id, config, model):
     return [image[r[0]:r[2], r[1]:r[3]] for r in regions]
 
 
+# run this test script with a sample image as the one argument
 if __name__ == "__main__":
 
     print("Testing bounding box...", sys.argv)
@@ -106,5 +109,9 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         sys.exit("USAGE: python bounding_box.py <IMG>")
 
-    crop = detect_rois(sys.argv[1], roi_config, roi_model)
-    print(crop)
+    rois = detect_rois(sys.argv[1], roi_config, roi_model)
+    
+    # save the crops in current working directory as a test
+    for i, roi in enumerate(rois):
+        print("Displaying region of interest", i)
+        imageio.imsave("roi_{}.jpg".format(i), roi)
