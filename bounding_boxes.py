@@ -13,12 +13,15 @@ import numpy as np
 import skimage 
 import sys
 
-from mrcnn.config import Config
-import mrcnn.model as modellib
-from mrcnn import utils
-from mrcnn.visualize import display_images
-import tensorflow as tf
-
+# squash tensorflow FutureWarnings
+import warnings  
+with warnings.catch_warnings():  
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    from mrcnn.config import Config
+    import mrcnn.model as modellib
+    from mrcnn import utils
+    from mrcnn.visualize import display_images
+    import tensorflow as tf
 
 # Not logically a part of configuration
 ROI_WEIGHTS = "weights/mask_rcnn_bbox_weights.h5"
@@ -55,9 +58,9 @@ with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
     )
 
 # Give the model the big h5 file of weights (from COCO CompVis challenge)
-print("Loading Mask-RCNN weights...")
+print("\n\nLoading Mask-RCNN model weights:", ROI_WEIGHTS)
 roi_model.load_weights(ROI_WEIGHTS, by_name=True)
-print("Loaded!")
+print("Loaded!\n\n")
 
 
 # Some lightly adapted utilities
@@ -72,17 +75,21 @@ def load_image(image_id):
         image = image[..., :3]
     return image
 
-# N.B. model is passed in as an argument...
-
-def detect_rois(image_id, model):
+# Pass in connection to the model and the configuration
+def detect_rois(image_id, config, model):
     """Use model.detect() to slide CNN windows over image and return
     rectangular regions that meet some threshold activation.
     """
     image = load_image(image_id)
     
-    image, window, scale, padding, crop = utils.resize_image(image, min_dim=IMAGE_MIN_DIM, min_scale=IMAGE_MIN_SCALE, max_dim=IMAGE_MAX_DIM, mode=IMAGE_RESIZE_MODE)
+    image, window, scale, padding, crop = utils.resize_image(
+        image, 
+        min_dim=config.IMAGE_MIN_DIM, 
+        min_scale=config.IMAGE_MIN_SCALE, 
+        max_dim=config.IMAGE_MAX_DIM, 
+        mode=config.IMAGE_RESIZE_MODE)
 
-    # turn of logging
+    # turn off logging
     results = model.detect([image], verbose=0)
     
     # from model.py: rois: [N, (y1, x1, y2, x2)] detection bounding boxes
@@ -93,4 +100,11 @@ def detect_rois(image_id, model):
 
 
 if __name__ == "__main__":
-    print("Hello world!")
+
+    print("Testing bounding box...", sys.argv)
+
+    if len(sys.argv) != 2:
+        sys.exit("USAGE: python bounding_box.py <IMG>")
+
+    crop = detect_rois(sys.argv[1], roi_config, roi_model)
+    print(crop)
